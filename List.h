@@ -1,223 +1,165 @@
+#pragma once 
 #include<iostream>
 #include<assert.h>
 using namespace std;
-typedef int DataType;
+
+template < class T >
 struct ListNode
 {
-	ListNode* next;
-	ListNode* prev;
-	DataType data;
-	ListNode(DataType x)
-		:next(NULL)
-		, prev(NULL)
-		, data(x)
+	T _data;
+	ListNode<T>* _next;
+	ListNode<T>* _prev;
+	ListNode(const T& x)
+		:_data(x)
+		, _next(NULL)
+		, _prev(NULL)
 	{}
 };
+
+template < class T >
 class List
 {
-	typedef ListNode Node;
+	typedef ListNode<T> Node;
 public:
-	List(DataType x)
+	List()
+		:_head(new Node(T()))
 	{
-		cout << "List()" << endl;
-		_head = new Node(x);
-		_tail = _head;
-	}
-	List(const List& l)
-	{
-		assert( l._head );
-		Node *tmp = l._head;
-		while (tmp)
-		{
-			PushBack(tmp->data);
-			tmp = tmp->next;
-		}
-	}
-	List& operator=(const List& l)
-	{
-		//先清理掉 *this
-		if (_head)
-		{
-			Node* tmp = _head;
-			Node* cur = _head;
-			while (tmp)
-			{
-				cur = tmp->next;
-				delete tmp;
-				tmp = cur;
-			}
-			_head = _tail = NULL;
-		}
-		//再进行拷贝
-		assert(l._head);
-		if (_head != l._head)
-		{
-			Node *tmp = l._head;
-			while (tmp)
-			{
-				PushBack(tmp->data);
-				tmp = tmp->next;
-			}
-		}
-		return *this;
-	}
-	~List()
-	{
-		cout << "~List" << endl;
-		if (_head)
-		{
-			Node* tmp = _head;
-			Node* cur = _head;
-			while (tmp)
-			{
-				cur = tmp->next;
-				delete tmp;
-				tmp = cur;
-			}
-			_head = _tail = NULL;
-		}
+		_head->_prev = _head;
+		_head->_next = _head;
 	}
 
-	void PushBack(DataType x)
+	List(const List<T>& l)
+		:_head(new Node(T()))
 	{
-		if (_head == NULL)
+		_head->_next = _head;
+		_head->_prev = _head;
+		Node* cur = _head;
+		Node* tmp = l._head->_next;
+		while (tmp != l._head)
 		{
-			Node* tmp = new Node(x);
-			_head = _tail = tmp;
-			_head->next = _head->prev = NULL;
+			this->PushBack(tmp->_data);
+			tmp = tmp->_next;
 		}
-		else
-		{
-			Node* tmp = new Node(x);
-			_tail->next = tmp;
-			tmp->prev = _tail;
-			_tail = tmp;
-			_tail->next = NULL;
-		}
+	}
+	//List<T>& operator=(const List<T>& l)
+	//{
+	//	this->Clear();
+	//	Node* cur = _head;
+	//	Node* tmp = l._head->_next;
+	//	while (tmp != l._head)
+	//	{
+	//		this->PushBack(tmp->_data);
+	//		tmp = tmp->_next;
+	//	}
+	//	return *this;
+	//}
+	List<T>& operator=(List<T> l)
+	{
+		swap(this->_head, l._head);
+		return *this;
+	}
+	void PushBack(const T x)
+	{
+		Node* tmp = new Node(x);
+		Node* cur = _head->_prev;
+		cur->_next = tmp;
+		tmp->_next = _head;
+		_head->_prev = tmp;
+		tmp->_prev = cur;
+	}
+	void PushFront(const T x)
+	{
+		Node* tmp = new Node(x);
+		Node* cur = _head->_next;
+		_head->_next = tmp;
+		tmp->_next = cur;
+		cur->_prev = tmp;
+		tmp->_prev = _head;
 	}
 	void PopBack()
 	{
-		if (_head == NULL)
+		if (_head->_next != _head)
 		{
-			return;
+			Node* tail = _head->_prev->_prev;
+			delete _head->_prev;
+			tail->_next = _head;
+			_head->_prev = tail;
 		}
-		else if (_head == _tail)
-		{
-			delete _head;
-			_head = _tail = NULL;
-		}
-		else
-		{
-			_tail = _tail->prev;
-			delete _tail->next;
-			_tail->next = NULL;
-		}
-	}
-	void PushFront(DataType x)
-	{
-		if (_head == NULL)
-		{
-			_head = _tail = new Node(x);
-		}
-		else
-		{
-			Node* tmp = new Node(x);
-			tmp->next = _head;
-			_head->prev = tmp;
-			_head = tmp;
-			_head->prev = NULL;
-		}
-		
 	}
 	void PopFront()
 	{
-		if (_head == NULL)
+		if (_head->_next != _head)
 		{
-			return;
-		}
-		else if (_head == _tail)
-		{
-			delete _head;
-			_head = _tail = NULL;
-		}
-		else
-		{
-			_head = _head->next;
-			delete _head->prev;
-			_head->prev = NULL;
+			Node* head = _head->_next->_next;
+			delete _head->_next;
+			_head->_next = head;
+			head->_prev = _head;
 		}
 	}
-		// 在pos的前面插入一个 
-	void Insert(Node* pos, DataType x)
+	Node* Find(const T x)
 	{
-		if (pos == _head)
+		Node* tmp = _head->_next;
+		while (tmp != _head)
 		{
-			PushFront(x);
-		}
-		else
-		{
-			Node* tmp = new Node(x);
-			Node* cur = pos->prev;
-			cur->next = tmp;
-			tmp->prev = cur;
-			tmp->next = pos;
-			pos->prev = tmp;
-		}
-
-	}
-	void Erase(Node* pos);
-	Node* Find(DataType x)
-	{
-		Node* cur = _head;
-		while ((cur->data != x)&&(cur))
-		{
-			cur = cur->next;
-		}
-		if (cur == NULL)
-		{
-			return NULL;
-		}
-		return cur;
-	}
-	void Reverse()
-	{
-		if ((_head == NULL) || (_head == _tail))
-		{
-			return;
-		}
-		else
-		{
-			Node* begin = _head;
-			Node* end = _tail;
-			while ((begin->next != end->prev)&&(begin->next != end))
+			if (tmp->_data == x)
 			{
-				DataType tmp = begin->data;
-				begin->data = end->data;
-				end->data = tmp;
-				begin = begin->next;
-				end = end->prev;
+				return tmp;
 			}
-
+			tmp = tmp->_next;
 		}
+		return NULL;
 	}
+	void Insert(const Node* pos, const T x)
+	{
+		assert(pos);
+		Node* tmp = new Node(x);
+		Node* prev = pos->_prev;
 
+		prev->_next = tmp;
+		tmp->_prev = prev;
+		tmp->_next = pos;
+		pos->_prev = tmp;
+	}
+	void Erase(Node* pos)
+	{
+		assert(pos && pos != _head);
+
+		Node* prev = pos->_prev;
+		Node* next = pos->_next;
+
+		prev->_next = next;
+		next->_prev = prev;
+
+		delete pos;
+	}
+	void Clear()
+	{
+		Node* cur = _head->_next;
+		while (cur != _head)
+		{
+			Node* tmp = cur->_next;
+			delete cur;
+			cur = tmp;
+		}
+		_head->_next = _head;
+		_head->_prev = _head;
+	}
+	~List()
+	{
+		Clear();
+		delete _head;
+		_head = NULL;
+	}
 	void Print()
 	{
-		if (_head)
+		Node* cur = _head->_next;
+		while(cur != _head)
 		{
-			Node* tmp = _head;
-			while (tmp)
-			{
-				cout << tmp->data;
-				tmp = tmp->next;
-			}
-			cout << endl;
-			cout << "_head:"<<_head->data << endl;
-			cout << "_tail:" << _tail->data << endl;
-			cout << _tail->prev->data << endl;
+			cout << cur->_data<< "->" ;
+			cur = cur->_next;
 		}
+		cout << "NULL" << endl;
 	}
 private:
 	Node* _head;
-	Node* _tail;
 };
